@@ -22,6 +22,11 @@ docs/figures/*.vtk
 docs/figures/*.dat
 docs/figures/*.csv
 
+# 大容量データ（VTK 生データ＋レンダリングフレーム）
+docs/figures/vtk/
+docs/figures/les_paraview/
+docs/figures/les_paraview_mac/*.png
+
 # その他
 *.log
 .DS_Store
