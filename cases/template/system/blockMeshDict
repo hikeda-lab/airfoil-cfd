@@ -1,0 +1,26 @@
+/*--- 背景メッシュ(snappyHexMesh のベース). 弦長~20-30倍のドメイン. 2D は薄スパン ---*/
+FoamFile { format ascii; class dictionary; object blockMeshDict; }
+
+scale 1;
+// パラメータ(必要に応じ書換): 弦=1, 上流10c, 下流20c, 上下10c, スパン0.01(2D)
+xMin -10; xMax 20; yMin -10; yMax 10; zMin 0; zMax 0.01;
+
+vertices
+(
+    ($xMin $yMin $zMin) ($xMax $yMin $zMin) ($xMax $yMax $zMin) ($xMin $yMax $zMin)
+    ($xMin $yMin $zMax) ($xMax $yMin $zMax) ($xMax $yMax $zMax) ($xMin $yMax $zMax)
+);
+blocks ( hex (0 1 2 3 4 5 6 7) (120 80 1) simpleGrading (1 1 1) );
+edges ();
+boundary
+(
+    inlet  { type patch;  faces ((0 4 7 3)); }
+    outlet { type patch;  faces ((1 2 6 5)); }
+    top    { type patch;  faces ((3 7 6 2)); }
+    bottom { type patch;  faces ((0 1 5 4)); }
+    // 2D: snappyHexMesh は empty を受け付けないため wall でメッシュ生成。
+    // ソルバー実行前に case.py が empty へ変換する。
+    // 3D無限翼: cyclic。3D有限翼: symmetry/patch に変更。
+    frontAndBack { type wall; faces ((0 3 2 1) (4 5 6 7)); }
+);
+// ************************************************************************* //

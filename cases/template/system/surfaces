@@ -1,0 +1,21 @@
+/*--- 翼面圧力サンプリング(Cp用) (OpenFOAM 13 #includeFunc 形式) ---*/
+
+type            surfaces;
+libs            ("libsampling.so");
+
+writeControl    writeTime;
+
+surfaceFormat   raw;
+fields          (p);
+interpolationScheme cellPoint;
+
+surfaces
+{
+    airfoilSurf
+    {
+        type        patch;
+        patches     (airfoil);
+    }
+}
+
+// ************************************************************************* //

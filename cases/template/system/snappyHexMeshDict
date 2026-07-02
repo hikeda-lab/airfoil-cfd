@@ -1,0 +1,106 @@
+/*--- 翼STL周りのメッシュ. constant/triSurface/airfoil.stl を参照 ---*/
+/*--- OpenFOAM 13 の geometry/features 構文に準拠                 ---*/
+/*--- 2D: frontAndBack を wall でメッシュ生成 → ソルバー前に empty へ変換 ---*/
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    object      snappyHexMeshDict;
+}
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+castellatedMesh true;
+snap            true;
+addLayers       false;  // 2D thin-slab では z 端点の不整合で illegal faces が発生するため無効
+
+geometry
+{
+    airfoil
+    {
+        type    triSurfaceMesh;
+        file    "airfoil.stl";
+    }
+    // 後流領域だけ level 2 細分（ドメイン全体は細分しない）
+    wakeBox
+    {
+        type    box;
+        min     (-0.5 -1.0 -1);
+        max     ( 4.0  1.0  1);
+    }
+}
+
+castellatedMeshControls
+{
+    maxLocalCells       1000000;
+    maxGlobalCells      5000000;
+    minRefinementCells  10;
+    nCellsBetweenLevels 2;
+    resolveFeatureAngle 30;
+    allowFreeStandingZoneFaces true;
+
+    features
+    (
+        { file "airfoil.eMesh"; levels ((1 2)); }   // エッジ近傍のみ 2 段
+    );
+
+    refinementSurfaces
+    {
+        airfoil
+        {
+            level (6 7);                // 翼面: level6(0.004m)-7(0.002m) — 非直交低減
+            patchInfo { type wall; }
+        }
+    }
+
+    refinementRegions
+    {
+        wakeBox { mode inside; levels ((1e15 2)); }   // 後流: level2(0.063m)
+    }
+
+    locationInMesh (-5 0.123 0.005);
+}
+
+snapControls
+{
+    nSmoothPatch        10;    // 3→10: スナップ前の面スムージング強化
+    tolerance           1.0;   // 2.0→1.0: より厳密なスナップ精度
+    nSolveIter          100;   // 30→100: スナップ変位の反復増
+    nRelaxIter          10;    // 5→10
+    nFeatureSnapIter    15;    // 10→15
+    implicitFeatureSnap true;  // false→true: エッジ特徴の自動検出も併用
+    explicitFeatureSnap true;
+    multiRegionFeatureSnap false;
+}
+
+addLayersControls
+{
+    // 翼面のみ 5 層プリズム境界層。frontAndBack は指定しないので 2D 整合性を保つ。
+    relativeSizes       true;
+    layers
+    {
+        airfoil { nSurfaceLayers 5; }   // 6→5: 難所での層崩壊を減らす
+    }
+    expansionRatio          1.2;
+    finalLayerThickness     0.3;
+    minThickness            0.05;
+    nGrow                   0;
+    featureAngle            130;       // 60→130: 後縁の鋭角でも層を追加
+    nRelaxIter              10;        // 5→10
+    nSmoothSurfaceNormals   5;        // 1→5
+    nSmoothNormals          3;
+    nSmoothThickness        10;
+    maxFaceThicknessRatio   0.5;
+    maxThicknessToMedialRatio 0.3;
+    minMedianAxisAngle      90;
+    nBufferCellsNoExtrude   0;
+    nLayerIter              100;       // 50→100
+}
+
+meshQualityControls
+{
+    #includeEtc "caseDicts/mesh/generation/meshQualityDict"
+}
+
+mergeTolerance  1e-6;
+// ************************************************************************* //

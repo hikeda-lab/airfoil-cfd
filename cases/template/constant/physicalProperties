@@ -1,0 +1,7 @@
+/*--- OpenFOAM 13 : 動粘性は physicalProperties に書く(旧transportPropertiesではない) ---*/
+FoamFile { format ascii; class dictionary; object physicalProperties; }
+
+viscosityModel  constant;
+nu              [0 2 -1 0 0 0 0] 1.5e-05;   // 空気 ~1.5e-5 m^2/s。Re に合わせ調整
+// 低Re狙いなら nu を上げる or U/chord を下げて Re = U*c/nu を目標値に。
+// ************************************************************************* //

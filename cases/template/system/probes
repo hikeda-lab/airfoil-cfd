@@ -1,0 +1,19 @@
+/*--- 観測点圧力(空力騒音用, LESで有効化) (OpenFOAM 13 #includeFunc 形式) ---*/
+
+type            probes;
+libs            ("libsampling.so");
+
+writeControl    timeStep;
+writeInterval   1;
+
+fields          (p);
+
+probeLocations
+(
+    (2 0 0)
+    (5 0 0)
+    (2 1 0)
+    (3 1.5 0)
+);
+
+// ************************************************************************* //

@@ -1,0 +1,33 @@
+[project]
+name = "airfoil-cfd"
+version = "0.1.0"
+description = "OpenFOAM 13 を用いた翼型 (airfoil) 非圧縮 CFD のジオメトリ生成・後処理ツール群（ホスト側 Python, uv 管理）"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=1.26",
+    "scipy>=1.11",
+    "matplotlib>=3.8",
+    "pandas>=2.1",
+    "numpy-stl>=3.1", # 翼型をスパン押し出しして STL 出力
+    "pyvista[all]>=0.43", # VTK/OpenFOAM 結果の 3D 可視化（Q値・λ2・渦度）
+    "pyyaml>=6.0", # run の META.yaml 記録
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "ruff>=0.4"]
+
+[project.scripts]
+# `uv run afcfd <subcommand>` で CLI を起動（src/airfoil_cfd/cli.py の main）
+afcfd = "airfoil_cfd.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/airfoil_cfd"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

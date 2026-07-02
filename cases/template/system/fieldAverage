@@ -1,0 +1,13 @@
+/*--- LES の時間平均/二次統計 ---*/
+fieldAverage
+{
+    type            fieldAverage;
+    libs            ("libfieldFunctionObjects.so");
+    writeControl    writeTime;
+    timeStart       0.05;     // 助走を捨てる開始時刻
+    fields
+    (
+        U { mean on; prime2Mean on; base time; }
+        p { mean on; prime2Mean on; base time; }
+    );
+}

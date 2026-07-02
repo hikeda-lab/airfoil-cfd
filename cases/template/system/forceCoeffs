@@ -1,0 +1,24 @@
+/*--- 揚力/抗力/モーメント係数 (OpenFOAM 13 #includeFunc 形式) ---*/
+/*--- 非圧縮なので rhoInf を与える。迎角は U で固定軸で与える運用  ---*/
+
+type            forceCoeffs;
+libs            ("libforces.so");
+
+writeControl    timeStep;
+writeInterval   1;
+
+log             yes;
+
+patches         (airfoil);
+
+rho             rhoInf;
+rhoInf          1.0;          // 非圧縮: 基準密度
+liftDir         (0 1 0);      // 迎角は U で与える運用 → 固定。風軸補正は後処理で。
+dragDir         (1 0 0);
+CofR            (0.25 0 0);   // 1/4 弦
+pitchAxis       (0 0 1);
+magUInf         30;           // = U∞ (case の U と一致させる)
+lRef            1.0;          // 弦長
+Aref            0.01;         // 弦長 × スパン (2D は薄スパン)
+
+// ************************************************************************* //

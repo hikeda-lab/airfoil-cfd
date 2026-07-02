@@ -1,0 +1,11 @@
+FoamFile { format ascii; class dictionary; object momentumTransport; }
+simulationType  LES;
+LES
+{
+    model        WALE;          // 代替: Smagorinsky, kEqn, dynamicKEqn
+    turbulence   on;
+    printCoeffs  on;
+    delta        cubeRootVol;   // 代替: vanDriest, smooth
+    cubeRootVolCoeffs { deltaCoeff 1; }
+}
+// ************************************************************************* //

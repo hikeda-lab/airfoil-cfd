@@ -1,0 +1,11 @@
+/*--- OpenFOAM 13 : 乱流設定。既定 RAS(kOmegaSST)。LES は presets で差替 ---*/
+FoamFile { format ascii; class dictionary; object momentumTransport; }
+
+simulationType  RAS;
+RAS
+{
+    model        kOmegaSST;   // 低Re遷移: kOmegaSSTLM
+    turbulence   on;
+    printCoeffs  on;
+}
+// ************************************************************************* //

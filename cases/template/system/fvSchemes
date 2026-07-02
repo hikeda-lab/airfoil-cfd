@@ -1,0 +1,19 @@
+/*--- OpenFOAM 13 fvSchemes : 定常RANS 既定。LES は turbulence-rans-les スキック参照 ---*/
+FoamFile { format ascii; class dictionary; object fvSchemes; }
+
+ddtSchemes      { default steadyState; }   // LES: backward (or CrankNicolson 0.9)
+gradSchemes     { default Gauss linear; grad(U) cellLimited Gauss linear 1; }
+divSchemes
+{
+    default         none;
+    div(phi,U)      bounded Gauss linearUpwind grad(U);   // LES: Gauss linear
+    turbulence      bounded Gauss upwind;
+    div(phi,k)      $turbulence;
+    div(phi,omega)  $turbulence;
+    div((nuEff*dev2(T(grad(U))))) Gauss linear;
+}
+laplacianSchemes { default Gauss linear corrected; }
+interpolationSchemes { default linear; }
+snGradSchemes   { default corrected; }
+wallDist        { method meshWave; }
+// ************************************************************************* //
