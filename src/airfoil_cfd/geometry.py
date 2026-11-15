@@ -77,8 +77,12 @@ def naca5(code: str, n: int = 200, chord: float = 1.0):
             np.column_stack([xl, yl]) * chord)
 
 
-def load_dat(path: str, chord: float = 1.0):
-    """Selig 形式 .dat を読み、(上面, 下面) に分割して返す。"""
+def load_dat(path: str, chord: float = 1.0, points: int | None = None):
+    """Selig 形式 .dat を読み、(上面, 下面) に分割して返す。
+
+    points 指定時は各面をコサイン分布点数へ3次スプライン再サンプリングする
+    （実測.datは点数が粗く前縁曲率を落としがちなため、STL品質確保に使う）。
+    """
     pts = []
     with open(path) as f:
         for line in f:
@@ -95,6 +99,23 @@ def load_dat(path: str, chord: float = 1.0):
     le = int(np.argmin(arr[:, 0]))
     upper = arr[: le + 1][::-1]
     lower = arr[le:]
+
+    if points:
+        from scipy.interpolate import CubicSpline
+
+        x = cosine_spacing(points)
+
+        def resample(branch):
+            bx, by = branch[:, 0], branch[:, 1]
+            order = np.argsort(bx)
+            bx, by = bx[order], by[order]
+            bx_u, idx = np.unique(bx, return_index=True)
+            cs = CubicSpline(bx_u, by[idx])
+            xs = np.clip(x, bx_u[0], bx_u[-1])
+            return np.column_stack([xs, cs(xs)])
+
+        upper, lower = resample(upper), resample(lower)
+
     return upper * chord, lower * chord
 
 
@@ -105,7 +126,11 @@ def load_dat(path: str, chord: float = 1.0):
 class ExtrudeSpec:
     mode: str = "2d"          # "2d" | "3d-infinite" | "3d-finite"
     span: float = 0.01        # スパン長 [m]（2d は薄く）
-    cap_tip: bool = False     # 3d-finite で翼端を閉じるか
+    cap_tip: bool = False     # 3d-finite で翼端(z=span)を閉じるか
+    cap_root: bool = True     # 3d-finite で翼根(z=0)を閉じるか
+                              # symmetryPlane に翼根を接続する半裁翼モデルでは False にする
+                              # （閉じると symmetryPlane と同一平面上に重複面ができ、
+                              #   snappyHexMesh がその接合部で不整合なメッシュを作る）
 
 
 def _loop(upper: np.ndarray, lower: np.ndarray) -> np.ndarray:
@@ -148,7 +173,8 @@ def extrude_to_stl(upper, lower, spec: ExtrudeSpec, out_path: str) -> str:
         cap(p0, flip=True)
         cap(p1, flip=False)
     elif spec.mode == "3d-finite":
-        cap(p0, flip=True)             # 翼根側を閉じる
+        if spec.cap_root:
+            cap(p0, flip=True)         # 翼根側を閉じる（孤立翼・非対称面翼根用）
         if spec.cap_tip:
             cap(p1, flip=False)        # 翼端を閉じる（開けると自由端）
     # 3d-infinite: 端面は周期境界のため張らない
@@ -163,10 +189,10 @@ def extrude_to_stl(upper, lower, spec: ExtrudeSpec, out_path: str) -> str:
 
 def build(airfoil: str | None = None, dat: str | None = None, chord: float = 1.0,
           points: int = 200, mode: str = "2d", span: float | None = None,
-          cap_tip: bool = False, out: str = "airfoil.stl") -> str:
+          cap_tip: bool = False, cap_root: bool = True, out: str = "airfoil.stl") -> str:
     """高レベル API: 形状ソースを選んで STL を生成。"""
     if dat:
-        upper, lower = load_dat(dat, chord)
+        upper, lower = load_dat(dat, chord, points=points)
     elif airfoil and airfoil.lower().startswith("naca"):
         code = airfoil[4:]
         upper, lower = (naca5(code, points, chord) if len(code) == 5
@@ -176,5 +202,5 @@ def build(airfoil: str | None = None, dat: str | None = None, chord: float = 1.0
 
     if span is None:
         span = 0.01 * chord if mode == "2d" else 3.0 * chord
-    spec = ExtrudeSpec(mode=mode, span=span, cap_tip=cap_tip)
+    spec = ExtrudeSpec(mode=mode, span=span, cap_tip=cap_tip, cap_root=cap_root)
     return extrude_to_stl(upper, lower, spec, out)
