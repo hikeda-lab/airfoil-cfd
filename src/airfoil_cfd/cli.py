@@ -13,7 +13,8 @@ def _cmd_geometry(a):
     from airfoil_cfd import geometry
     os.makedirs(os.path.dirname(a.out) or ".", exist_ok=True)
     out = geometry.build(airfoil=a.airfoil, dat=a.dat, chord=a.chord, points=a.points,
-                         mode=a.mode, span=a.span, cap_tip=a.cap_tip, out=a.out)
+                         mode=a.mode, span=a.span, cap_tip=a.cap_tip,
+                         cap_root=not a.open_root, out=a.out)
     print(f"STL を生成: {out}")
 
 
@@ -88,6 +89,8 @@ def main(argv=None):
     g.add_argument("--chord", type=float, default=1.0); g.add_argument("--points", type=int, default=200)
     g.add_argument("--mode", choices=["2d", "3d-infinite", "3d-finite"], default="2d")
     g.add_argument("--span", type=float, default=None); g.add_argument("--cap-tip", action="store_true")
+    g.add_argument("--open-root", action="store_true",
+                   help="翼根(z=0)を閉じない。symmetryPlaneに接続する半裁翼モデル用")
     g.add_argument("--out", default="airfoil.stl"); g.set_defaults(func=_cmd_geometry)
 
     c = sub.add_parser("case", help="ケース生成")
@@ -124,6 +127,9 @@ def main(argv=None):
     ac.add_argument("--ref-len", type=float, default=1.0); ac.add_argument("--probe", type=int, default=0)
     ac.add_argument("--method", choices=["curle", "fft"], default="fft"); ac.add_argument("--out")
     ac.set_defaults(func=_cmd_acoustics)
+
+    from airfoil_cfd.datamgmt.cli import add_parsers as _add_datamgmt_parsers
+    _add_datamgmt_parsers(sub)   # runs / archive（run 管理・HDD アーカイブ）
 
     args = p.parse_args(argv)
     args.func(args)

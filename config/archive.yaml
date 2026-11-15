@@ -1,0 +1,68 @@
+# CFD run アーカイブ設定（git 管理）
+# マシン固有の値（HDD パス・ボリューム UUID・ミラー先）は config/archive.local.yaml に書く。
+# 雛形: config/archive.local.example.yaml
+
+archive:
+  root_dirname: airfoil-cfd-archive   # HDD マウント直下に作るアーカイブルート
+  free_space_margin: 1.1              # 必要容量 × この係数 の空きが無ければ失敗
+  mirror_tier: minimal                # mirrors にも複製する保存レベル（HDD を唯一のコピーにしない）
+
+registry_dir: registry/runs           # run メタデータ YAML（git 管理 → GitHub にも残る）
+cases_dir: cases/runs                 # ingest のスキャン対象
+figures_dir: docs/figures             # "<case名>*" に一致する図を minimal に同梱
+
+# 常に除外（再生成可能 or 不要）。full でも --include-vtk 指定時以外は VTK を除外。
+global_exclude:
+  - "**/.DS_Store"
+  - "*.foam"
+  - "staging/**"
+
+# 保存レベル。上位は extends で下位を含む。パターンはケースディレクトリ相対:
+#   *  … "/" を跨がない任意文字列,  ** … "/" を跨ぐ任意文字列
+# 時刻ディレクトリ（数値名）と processor* は include ではなく time_dirs / processor で制御する。
+tiers:
+  minimal:
+    description: 条件の再現と Cl/Cd・残差・メッシュ品質の確認に必要な最小セット
+    include:
+      - run.yaml
+      - "system/**"
+      - "constant/*"                  # 物性・乱流などの辞書（polyMesh ディレクトリは含まない）
+      - "constant/triSurface/**"      # STL（ジオメトリ再生成の元）
+      - "constant/geometry/**"
+      - "0.orig/**"
+      - "0/**"
+      - "log.*"
+      - "*.log"
+      - "Allrun*"
+      - "Allclean"
+      - "postProcessing/forceCoeffs*/**"
+      - "postProcessing/residuals*/**"
+      - "postProcessing/checkMesh*/**"
+    time_dirs: []
+    include_figures: true
+
+  standard:
+    description: minimal + メッシュ・最終場・Cp・プローブ・LES 平均/RMS・代表瞬時場
+    extends: minimal
+    include:
+      - "constant/polyMesh/**"
+      - "constant/extendedFeatureEdgeMesh/**"
+      - "postProcessing/probes*/**"
+      - "postProcessing/fieldAverage*/**"
+    surfaces: latest                  # postProcessing/surfaces は最終時刻のみ（--acoustic-series で全時刻）
+    time_dirs: [latest]
+    les_snapshots: 3                  # LES のとき後半から等間隔に選ぶ代表瞬時場の数
+
+  full:
+    description: 研究用完全保存（全時刻・全 postProcessing。processor* は未 reconstruct 分のみ）
+    extends: standard
+    include:
+      - "**"                          # 上記カテゴリ以外のケース内ファイルも全部（dynamicCode・入れ子ケースは除く）
+    surfaces: all
+    time_dirs: [all]
+    processor: if_not_reconstructed   # never | if_not_reconstructed | always
+
+# LES の場フィールド名パターン（時刻ディレクトリ内のファイル名）
+les_fields:
+  mean: ["*Mean"]
+  rms: ["*Prime2Mean"]

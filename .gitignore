@@ -36,3 +36,8 @@ docs/figures/les_paraview_mac/*.png
 
 # Python version file (ローカル)
 .python-version
+
+# データ管理: マシン固有のアーカイブ設定（HDD パス・UUID）
+config/archive.local.yaml
+# run レジストリはアーカイブ先の HDD UUID・ホームのパスを含むので公開リポジトリに載せない
+registry/runs/

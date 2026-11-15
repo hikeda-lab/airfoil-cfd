@@ -1,0 +1,13 @@
+# マシン固有のアーカイブ設定の雛形。
+#   cp config/archive.local.example.yaml config/archive.local.yaml
+# archive.local.yaml は .gitignore 済み（パスや UUID をコミットしない）。
+
+destination:
+  mount: /Volumes/LOGITEC_HD          # 外付け HDD のマウントポイント
+  volume_uuid: null                   # `diskutil info /Volumes/LOGITEC_HD` の Volume UUID。null なら照合しない
+  # VM から同じアーカイブを見るときのパス（multipass mount 先）
+  vm_root: /mnt/cfd-archive
+
+# minimal レベルを複製する 2 次コピー先（HDD を唯一のコピーにしない）
+mirrors:
+  - ~/cfd-archive-mirror
